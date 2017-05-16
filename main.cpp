@@ -14,12 +14,15 @@ using namespace std;
 
 #define NUM_SEATS 6      // number of seats available on shuttle
 #define TINY 1.e-20      // a very small time period
-//#define TERMNL 0         // named constants for labelling event set
+
+//FINAL PROJECT Values
+#define TIME_OPEN 2
+#define TIME_CLOSE 3
+
 
 long int TERMNL = 0;
 long int CARLOT = 1;
 
-//#define CARLOT 1
 
 
 //facility_set buttons ("Curb",2);  // customer queues at each stop
@@ -33,7 +36,10 @@ event_set *hop_on;
 event boarded ("boarded");             // one customer responds after taking a seat
 
 //event_set shuttle_called ("call button", 2); // call buttons at each location
-event_set *shuttle_called;
+//event_set *shuttle_called;
+template<typename T>
+vector<T>
+
 
 void make_passengers(long whereami);       // passenger generator
 //string places[2] = {"Terminal", "CarLot"}; // where to generate
@@ -142,7 +148,7 @@ void passenger(long whoami)
   get_off_now->wait_any();            // everybody off when shuttle reaches next stop
 }
 
-// Model segment 3: the shuttle bus
+// Elevator Process
 
 void shuttle() {
   create ("shuttle");
