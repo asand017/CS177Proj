@@ -1,7 +1,8 @@
 # CS177Proj
 Advanced Elevator Technology
 
-ELEVATORS
+ELEVATORS  
+
 -: Things we still need to do
 +: Things we've already done
 
@@ -43,3 +44,4 @@ Global Facility(?):
 Keeping track of how many people are in elevator:
    - Mentioned as step that would be addressed later but I'm assuming we do it now
    - Elevator size Array which keeps track of how many people are in elevator
+       -If too many people in elevator already, reject people from coming in
