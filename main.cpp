@@ -9,6 +9,7 @@
 #include <cmath>
 #include <time.h>
 #include <vector>
+
 using namespace std;
 
 #define NUM_SEATS 6      // number of seats available on shuttle
@@ -21,26 +22,29 @@ using namespace std;
 long int LOBBY = 0;
 
 facility_set *buttons;
-facility idle ("idle");           // dummy facility indicating an idle shuttle
-
-event_set *get_off_now; //("get_off_now");  // all customers can get off shuttle
-
-//event_set hop_on("board shuttle", 2);  // invite one customer to board at this stop
+facility idle ("idle");
+event_set *get_off_now; 
 event_set *hop_on;
-event boarded ("boarded");             // one customer responds after taking a seat
+event boarded ("boarded"); 
 
-event_set *elevator_called;
+event Wakeup("Wakeup");
 
-void make_passengers(long whereami);       // passenger generator
+int want_up[8];
+int want_dn[8];
+int want_off[2][8];
+
+void make_passengers(long whereami);
+
 vector<string> floors = {"L", "f2", "f3", "f4", "f5", "f6", "f7", "f8"};
 long group_size();
 
 void passenger(long whoami);  // passenger trajectory
-vector<string> people = {"coming", "going"}; // who's entering the elevator (coming) who's leaving (going) 
+vector<string> people = {"incoming", "outgoing", "interfloor"}
+void elevator();
+void loop_around_airport(long & seats_used);
 
-void elevator();                  // trajectory of the shuttle bus consists of...
-void loop_around_airport(long & seats_used);      // ... repeated trips around airport
-void load_elevator(long whereami, long & on_board); // posssibly loading passengers
+void load_elevator(long whereami, long & on_board);
+
 qtable elevator_occ("elevator occupancy");  // time average of how full is the elevator
 
 extern "C" void sim(int argc, char *argv[])      // main process
@@ -48,13 +52,11 @@ extern "C" void sim(int argc, char *argv[])      // main process
 
       create("sim");
       elevator_occ.add_histogram(NUM_SEATS+1,0,NUM_SEATS);
-      /*for(unsigned int i = 0; i < TERMNL + 1; i++){
-	      if(i == 1){
-		      continue;
-	      }
-          make_passengers(i);  // generate a stream of arriving customers
-      }*/
-      make_passengers(LOBBY);  // start elevator at the Lobby
+      
+      for(int i = 0; i < string.size(); i++){
+        make_passengers(i);
+      }
+
       elevator();              // create a single elevator
       hold (1440);             // wait for a whole day (in minutes) to pass
       report();
@@ -71,10 +73,10 @@ void make_passengers(long whereami)
 
   while(clock < 1440.)          // run for one day (in minutes)
   {
-    hold(expntl(10));           // exponential interarrivals, mean 10 minutes
+    hold(expntl(10)); 
     long group = group_size();
-    for (long i=0;i<group;i++)  // create each member of the group
-      passenger(whereami);      // new passenger appears at this location
+    for (long i=0;i<group;i++) 
+      passenger(whereami); 
   }
 }
 
@@ -85,10 +87,37 @@ void passenger(long whoami)
   const char* myName=people[whoami].c_str(); // hack because CSIM wants a char*
   create(myName);
 
+  // Give random destination floor
+
+  int dest_floor = -1;
+
+  while(dest_floor != whoami){
+     dest_floor = rand() % 8;
+  }
+
   (*buttons) [whoami].reserve();     // join the queue at my starting location
-  (*elevator_called) [whoami].set();  // head of queue, so call shuttle
+  //(*elevator_called) [whoami].set();  // head of queue, so call shuttle
+  
+  //change array
+  if(dest_floor > whoami){
+    want_up[whoami]++;
+  }
+  else if(dest_floor < whoami){
+    want_dn[whoami]++;
+  }
+
   (*hop_on) [whoami].queue();        // wait for shuttle and invitation to board
-  (*elevator_called) [whoami].clear();// cancel my call; next in line will push 
+  // (*elevator_called) [whoami].clear();// cancel my call; next in line will push 
+  
+  if(dest_floor > whoami){
+    want_up[whoami];
+  }
+  else if(dest_floor < whoami){
+    want_dn[whoami];
+  }
+  //SET WANT OFF HERE
+
+
   hold(uniform(0.5,1.0));        // takes time to get seated
   boarded.set();                 // tell driver you are in your seat
   (*buttons) [whoami].release();     // let next person (if any) access button
