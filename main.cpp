@@ -23,6 +23,8 @@ long int LOBBY = 0;
 
 facility_set *buttons;
 facility idle ("idle");
+event_set going_up[2];
+event_set going_dn[2];
 event_set *get_off_now; 
 event_set *hop_on;
 event boarded ("boarded"); 
@@ -53,7 +55,7 @@ extern "C" void sim(int argc, char *argv[])      // main process
       create("sim");
       elevator_occ.add_histogram(NUM_SEATS+1,0,NUM_SEATS);
       
-      for(int i = 0; i < string.size(); i++){
+      for(int i = 0; i < floors.size(); i++){
         make_passengers(i);
       }
 
@@ -95,8 +97,8 @@ void passenger(long whoami)
      dest_floor = rand() % 8;
   }
 
-  (*buttons) [whoami].reserve();     // join the queue at my starting location
-  //(*elevator_called) [whoami].set();  // head of queue, so call shuttle
+  //(*buttons) [whoami].reserve();     // join the queue at my starting location
+  Wakeup.set();  // head of queue, so call shuttle
   
   //change array
   if(dest_floor > whoami){
@@ -107,7 +109,7 @@ void passenger(long whoami)
   }
 
   (*hop_on) [whoami].queue();        // wait for shuttle and invitation to board
-  // (*elevator_called) [whoami].clear();// cancel my call; next in line will push 
+  (*elevator_called) [whoami].clear();// cancel my call; next in line will push 
   
   if(dest_floor > whoami){
     want_up[whoami];
@@ -129,10 +131,27 @@ void passenger(long whoami)
 void elevator() {
   create ("elevator");
   while(1) {  // loop forever
-    idle.reserve();                   // relax at garage till called from somewhere
-    long who_pushed = elevator_called->wait_any();
-    (*elevator_called) [who_pushed].set(); // loop exit needs to see event
-    idle.release();                   // and back to work we go!
+    Wakeup.wait();
+    
+    int dn_visit = -1;
+    int up_visit = 9;
+	  
+    //Check array of requests, check for highest person wanting to go down and lowest person wanting to go up
+    for(int = 0; i < 8; i++){
+	     if(want_up[i] > 0 && want_up[i] < up_visit) up_visit = i;
+	     if(want_dn[i] > 0 && want_dn[i] > dn_visit) dn_visit = i;
+    }
+    
+    //TODO: CHECK IF OTHER ELEVATOR IS ON, GOING IN THAT DIRECTION ALREADY. IF NOTPICK WHICHEVER IS CLOSEST
+    if(up_visit != 9 && dn_visit != -1){
+       
+    }
+    
+    
+    
+    
+    //long who_pushed = elevator_called->wait_any();
+    //(*elevator_called) [who_pushed].set(); // loop exit needs to see event
 
     long seats_used = 0;              // shuttle is initially empty
     elevator_occ.note_value(seats_used);
