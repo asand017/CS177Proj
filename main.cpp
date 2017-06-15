@@ -37,16 +37,27 @@ int want_up[8];
 int want_dn[8];
 //int want_off[2][8];
 
+vector<int> arr_elv = {0,0,0,0,0,0,0,0,0}; // 0 - no elevator coming, 1 - elevator 1 coming, 2 - elevator 2 coming
+// 3 - both elevators coming 
+
 struct Elevator{
-	int current_floor;
-	vector<int> want_off[9];
-	bool up = false; // up -> true, down -> false
-	bool down = false;
-	bool asleep = true;
-	//Elevator(){
-	//
-	//} 
-};
+	int current_floor; // current floor of the elevator
+	vector<int> want_off[9]; // floors where passengers want to go
+	int direction; // 0 - idle, 1 - up, 2 - down
+	int next_stop; // next floor to go to
+
+	void update(int curr, int next, int Direction){
+		current_floor = curr;
+		next_stop = next;
+		direction = Direction;
+	}
+
+	void print(){
+	    cout << "current floor: " << current_floor << endl;
+		cout << "direction: " << direction << endl;
+		cout << "next elevator stop: " << next_stop << endl;
+	}
+};	
 
 void make_passengers(long whereami);
 
@@ -74,14 +85,16 @@ extern "C" void sim(int argc, char *argv[])      // main process
 	  
       create("sim");
 
-
       elevator_occ.add_histogram(NUM_SEATS+1,0,NUM_SEATS);
       
       for(int i = 0; i < floors.size(); i++){
         make_passengers(i);
       }
 
-      elevator1();              // create a single elevator
+	  elevs[0].update(9, 9, 0); // elevator 1
+	  elevs[1].update(0, 0, 0); // elevator 2
+
+      elevator1();             
       elevator2();
 	  hold (1440);             // wait for a whole day (in minutes) to pass
       report();
@@ -94,11 +107,10 @@ extern "C" void sim(int argc, char *argv[])      // main process
 void make_passengers(long whereami)
 {
   
-  //cout << "new passenger made on floor " << whereami << endl;
-  const char* myName=floors[whereami].c_str(); // hack because CSIM wants a char*
+  const char* myName=floors[whereami].c_str();
   create(myName);
 
-  while(clock < 1440)          // run for one day (in minutes)
+  while(clock < 1440)       
   {
     hold(expntl(10)); 
     long group = group_size();
@@ -122,37 +134,46 @@ void passenger(long whoami)
 
   int dest_floor;
 
+  //cout << want_up[0] << " " << want_dn[0] << endl;
+
   while(dest_floor == whoami){
      dest_floor = rand() % 9; // a random destination floor
   }
 
   //(*buttons) [whoami].reserve();     // join the queue at my starting location
-  //Wakeup.set();  // head of queue, so call shuttle
   
+  int pass_dir;
+
   //change array
   if(dest_floor > whoami){
-    want_up[whoami]++;
+    pass_dir = 1;
+	want_up[whoami] += 1;
   }
   else if(dest_floor < whoami){
-    want_dn[whoami]++;
+	pass_dir = 2;
+    want_dn[whoami] += 1;
   }
 
-  //(*hop_on) [whoami].queue();        // wait for shuttle and invitation to board
-  //(*elevator_called) [whoami].clear();// cancel my call; next in line will push 
-  
+  Wakeup.set(); // wake up a elevator
+
+ 
+  int elv_num = arr_elv[whoami];
+
+  while(elevs[elv_num].direction != pass_dir);
+ 
   if(dest_floor > whoami){
     want_up[whoami];
   }
   else if(dest_floor < whoami){
     want_dn[whoami];
   }
-  //SET WANT OFF HERE
-
+  
 
   hold(uniform(0.5,1.0));        // takes time to get seated
   //boarded.set();                 // tell driver you are in your seat
   //(*buttons) [whoami].release();     // let next person (if any) access button
   get_off_now->wait_any();            // everybody off when shuttle reaches next stop*/
+  
   
 }
 
@@ -160,8 +181,6 @@ void passenger(long whoami)
 
 void elevator1() {
   create ("elevator1");
-
-  
 
   while(1) {  // loop forever
 
@@ -171,17 +190,18 @@ void elevator1() {
 
     Wakeup.wait();
     
-    int dn_visit = -1;
-    int up_visit = 9;
+	
+    //int dn_visit = -1;
+    //int up_visit = 9;
 	  
     //for(int i = 0; i < 8; i++){
 	//     if(want_up[i] > 0 && want_up[i] < up_visit) up_visit = i;
 	//     if(want_dn[i] > 0 && want_dn[i] > dn_visit) dn_visit = i;
     //}
     
-    if(up_visit != 9 && dn_visit != -1){
-       
-    }
+    //if(up_visit != 9 && dn_visit != -1){
+    //   
+    //}
     
     
     //long who_pushed = elevator_called->wait_any();
