@@ -207,45 +207,55 @@ void elevator(int elevatornum) {
     
     
     //Find out first elevator to visit for maximum number of visits
+		int goto_floor;
     int dn_visit = -1;
     int up_visit = 20;  
     for(int i = 0; i < 10; i++){
-	     if(want_up[i] > 0 && want_up[i] < up_visit && (*Coming_up)[i].state() == NOT_OCC) up_visit = i;
-	     if(want_dn[i] > 0 && want_dn[i] > dn_visit && (*Coming_dn)[i].state() == NOT_OCC) dn_visit = i;
+	     if(want_up[i] > 0 && i < up_visit && (*Coming_up)[i].state() == NOT_OCC) up_visit = i;
+	     if(want_dn[i] > 0 && i > dn_visit && (*Coming_dn)[i].state() == NOT_OCC) dn_visit = i;
     }
-
-    if(dn_visit != -1)
-    {
-        goto_floor = up_visit;
-        elevs[elevatornum].direction = 1;
-    }
-    else if(up_visit != 20)
-    {
-        goto_floor = dn_visit;
-        elevs[elevatornum].direction = 2;
-    }
-    else{
-       if(abs(distance_up_visit) > abs(distance_dn_visit))
-       {
-             
-       }
-    }
+    
+    bool dn = false, up = false, both = false;
+    if(up_visit < 20) up = true;
+    if(dn_visit > -1) dn = true;
+    if(up && dn) both = true;
     
     //Compare floor with maximum number of visits for up and down
     //Choose whichever is closest
-    int distance_dn_visit = -100, distance_up_visit = -100;
+    int min_dn_visit = 100, min_up_visit = 100, min_elevator_up = -1, min_elevatord_dn = -1;
     for(int i = 0; i < elevs.size(); i++){
-        if(up_visit < 20) distance_up_visit = elevs[elevatornum].current_floor - up_visit;
-        if(dn_visit > -1) distance_dn_visit = elevs[elevatornum].current_floor - dn_visit;
+        int distance_up_visit = 101, distance_dn_visit = 101;
+        if(elevs[elevatornum].direction == 0){
+          if(up) distance_up_visit = abs(elevs[elevatornum].current_floor - up_visit);
+          if(dn) distance_dn_visit = abs(elevs[elevatornum].current_floor - dn_visit);
+          if(distance_up_visit < min_up_visit) {
+           min_up_visit = distance_up_visit;
+           min_elevator_up = i;
+          }
+          if(distance_dn_visit < min_dn_visit) {
+           min_dn_visit = distance_dn_visit;
+            min_elevator_dn = i;
+          }
+        }
     }
-    int goto_floor;
-    
-
     
     
-    //if(up_visit != 9 && dn_visit != -1){
-    //   
-    //}
+    if(both)
+    {
+      if(min_elevator_up != elevs[elevatornum].current_floor) min_elevator_dn = elevatornum;
+    }
+    
+    long seats_used = 0;
+    
+    if(min_elevator_up == elevatornum){  
+      goto_floor = up_visit;
+      elevs[elevatornum].next_floor = goto_floor;
+    }
+    
+    elese if(min_elevator_dn == elevatornum){
+      goto_floor = dn_visit
+      elevs[elevatornum].next_floor = goto_floor;
+    }
     
     
     //long who_pushed = elevator_called->wait_any();
