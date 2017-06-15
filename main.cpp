@@ -22,20 +22,31 @@ using namespace std;
 long int LOBBY = 0;
 
 facility_set *buttons;
-facility idle ("idle");
-event_set going_up[2];
-event_set going_dn[2];
-event_set *get_off_now; 
-event_set *hop_on;
-event boarded ("boarded"); 
+//facility idle ("idle");
+
+//event_set going_up[2];
+//event_set going_dn[2];
+event_set get_off_now[2]; 
+event_set hop_on[2];
+
+event_set boarded[2]; 
 
 event Wakeup("Wakeup");
 
 int want_up[8];
 int want_dn[8];
-int want_off[2][8];
+//int want_off[2][8];
 
-
+struct Elevator{
+	int current_floor;
+	vector<int> want_off[9];
+	bool up = false; // up -> true, down -> false
+	bool down = false;
+	bool asleep = true;
+	//Elevator(){
+	//
+	//} 
+};
 
 void make_passengers(long whereami);
 
@@ -45,10 +56,16 @@ long group_size();
 void passenger(long whoami);  // passenger trajectory
 vector<string> people = {"incoming", "outgoing", "interfloor"};
 
-void elevator();
+void elevator1();
+void elevator2();
 void loop_around_airport(long & seats_used);
 
 void load_elevator(long whereami, long & on_board);
+
+Elevator elevator_1;
+Elevator elevator_2;
+
+vector<Elevator> elevs = {elevator_1, elevator_2};
 
 qtable elevator_occ("elevator occupancy");  // time average of how full is the elevator
 
@@ -56,14 +73,17 @@ extern "C" void sim(int argc, char *argv[])      // main process
 {
 	  
       create("sim");
+
+
       elevator_occ.add_histogram(NUM_SEATS+1,0,NUM_SEATS);
       
       for(int i = 0; i < floors.size(); i++){
         make_passengers(i);
       }
 
-      elevator();              // create a single elevator
-      hold (1440);             // wait for a whole day (in minutes) to pass
+      elevator1();              // create a single elevator
+      elevator2();
+	  hold (1440);             // wait for a whole day (in minutes) to pass
       report();
       //status_facilities();
   
@@ -73,7 +93,8 @@ extern "C" void sim(int argc, char *argv[])      // main process
 
 void make_passengers(long whereami)
 {
-  cout << "new passenger made on floor " << whereami << endl;
+  
+  //cout << "new passenger made on floor " << whereami << endl;
   const char* myName=floors[whereami].c_str(); // hack because CSIM wants a char*
   create(myName);
 
@@ -81,8 +102,8 @@ void make_passengers(long whereami)
   {
     hold(expntl(10)); 
     long group = group_size();
-    //for (long i=0;i<group;i++) 
-    //  passenger(whereami); 
+    for (long i=0;i<group;i++) 
+      passenger(whereami); 
   }
 
 }
@@ -91,19 +112,22 @@ void make_passengers(long whereami)
 
 void passenger(long whoami)
 {
-  const char* myName=people[whoami].c_str(); // hack because CSIM wants a char*
-  create(myName);
+
+  //whoami --> the current floor of the passenger
+  
+  const char* myName=people[whoami].c_str();
+  //create(myName);
 
   // Give random destination floor
 
-  int dest_floor = -1;
+  int dest_floor;
 
-  while(dest_floor != whoami){
-     dest_floor = rand() % 8;
+  while(dest_floor == whoami){
+     dest_floor = rand() % 9; // a random destination floor
   }
 
   //(*buttons) [whoami].reserve();     // join the queue at my starting location
-  Wakeup.set();  // head of queue, so call shuttle
+  //Wakeup.set();  // head of queue, so call shuttle
   
   //change array
   if(dest_floor > whoami){
@@ -113,7 +137,7 @@ void passenger(long whoami)
     want_dn[whoami]++;
   }
 
-  (*hop_on) [whoami].queue();        // wait for shuttle and invitation to board
+  //(*hop_on) [whoami].queue();        // wait for shuttle and invitation to board
   //(*elevator_called) [whoami].clear();// cancel my call; next in line will push 
   
   if(dest_floor > whoami){
@@ -126,16 +150,25 @@ void passenger(long whoami)
 
 
   hold(uniform(0.5,1.0));        // takes time to get seated
-  boarded.set();                 // tell driver you are in your seat
+  //boarded.set();                 // tell driver you are in your seat
   //(*buttons) [whoami].release();     // let next person (if any) access button
-  get_off_now->wait_any();            // everybody off when shuttle reaches next stop
+  get_off_now->wait_any();            // everybody off when shuttle reaches next stop*/
+  
 }
 
 // Elevator Process
 
-void elevator() {
-  create ("elevator");
+void elevator1() {
+  create ("elevator1");
+
+  
+
   while(1) {  // loop forever
+
+
+	//elevator_1.monitor();
+	//cout << "mailbox 1: " << elevator_1.msg_cnt() << endl;
+
     Wakeup.wait();
     
     int dn_visit = -1;
@@ -166,6 +199,16 @@ void elevator() {
 	//idle1.release();
   }
   
+}
+
+void elevator2() {
+	create("elevator2");
+	
+	/*while(1) {
+		wakeup.wait();
+
+		hold(5);
+	}*/
 }
 
 long group_size() {  // calculates the number of passengers in a group
@@ -225,7 +268,7 @@ void load_elevator(long whereami, long & on_board)  // manage passenger loading
     //((*buttons) [whereami].num_busy() + (*buttons) [whereami].qlength() > 0))
   //{
     (*hop_on) [whereami].set();// invite one person to board
-    boarded.wait();  // pause until that person is seated
+    //boarded.wait();  // pause until that person is seated
     on_board++;
     hold(TINY);  // let next passenger (if any) reset the button
   //}
