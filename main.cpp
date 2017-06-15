@@ -21,7 +21,7 @@ using namespace std;
 
 long int LOBBY = 0;
 
-facility_set *buttons;
+facility_set buttons[2];
 //facility idle ("idle");
 
 //event_set going_up[2];
@@ -31,10 +31,14 @@ event_set hop_on[2];
 
 event_set boarded[2]; 
 
+//Wakes up elevators
 event Wakeup("Wakeup");
 
-int want_up[8];
-int want_dn[8];
+event_set Coming_up[9];
+event_set Coming_dn[9];
+
+int want_up[9];
+int want_dn[9];
 //int want_off[2][8];
 
 vector<int> arr_elv = {0,0,0,0,0,0,0,0,0}; // 0 - no elevator coming, 1 - elevator 1 coming, 2 - elevator 2 coming
@@ -67,8 +71,8 @@ long group_size();
 void passenger(long whoami);  // passenger trajectory
 vector<string> people = {"incoming", "outgoing", "interfloor"};
 
-void elevator1();
-void elevator2();
+void elevator(int elevatornum);
+//void elevator2();
 void loop_around_airport(long & seats_used);
 
 void load_elevator(long whereami, long & on_board);
@@ -94,8 +98,8 @@ extern "C" void sim(int argc, char *argv[])      // main process
 	  elevs[0].update(9, 9, 0); // elevator 1
 	  elevs[1].update(0, 0, 0); // elevator 2
 
-      elevator1();             
-      elevator2();
+      elevator(1);             
+      elevator(2);
 	  hold (1440);             // wait for a whole day (in minutes) to pass
       report();
       //status_facilities();
@@ -128,7 +132,7 @@ void passenger(long whoami)
   //whoami --> the current floor of the passenger
   
   const char* myName=people[whoami].c_str();
-  //create(myName);
+  create(myName);
 
   // Give random destination floor
 
@@ -154,18 +158,26 @@ void passenger(long whoami)
     want_dn[whoami] += 1;
   }
 
-  Wakeup.set(); // wake up a elevator
+  Wakeup.set(); // wake up an elevator
 
- 
+  //wait for announcemnt of which elevator is coming
+  if(pass_dir ==1){
+    (*Coming_up)[whoami].wait();
+  }
+  else if(pass_dir == 2){
+    (*Coming_dn)[whoami].wait();
+  }
+
+  //elv_num is elevator that came to floor
   int elv_num = arr_elv[whoami];
 
   while(elevs[elv_num].direction != pass_dir);
  
   if(dest_floor > whoami){
-    want_up[whoami];
+    want_up[whoami]--;
   }
   else if(dest_floor < whoami){
-    want_dn[whoami];
+    want_dn[whoami]--;
   }
   
 
@@ -179,25 +191,57 @@ void passenger(long whoami)
 
 // Elevator Process
 
-void elevator1() {
-  create ("elevator1");
+void elevator(int elevatornum) {
+  char num = elevatornum + 48;
+  string elev_name = "elevator" + num;
+  create (elev_name.c_str());
 
   while(1) {  // loop forever
 
 
 	//elevator_1.monitor();
 	//cout << "mailbox 1: " << elevator_1.msg_cnt() << endl;
-
+    
+    //Wait for passenger to call elevator
     Wakeup.wait();
     
-	
-    //int dn_visit = -1;
-    //int up_visit = 9;
-	  
-    //for(int i = 0; i < 8; i++){
-	//     if(want_up[i] > 0 && want_up[i] < up_visit) up_visit = i;
-	//     if(want_dn[i] > 0 && want_dn[i] > dn_visit) dn_visit = i;
-    //}
+    
+    //Find out first elevator to visit for maximum number of visits
+    int dn_visit = -1;
+    int up_visit = 20;  
+    for(int i = 0; i < 10; i++){
+	     if(want_up[i] > 0 && want_up[i] < up_visit && (*Coming_up)[i].state() == NOT_OCC) up_visit = i;
+	     if(want_dn[i] > 0 && want_dn[i] > dn_visit && (*Coming_dn)[i].state() == NOT_OCC) dn_visit = i;
+    }
+
+    if(dn_visit != -1)
+    {
+        goto_floor = up_visit;
+        elevs[elevatornum].direction = 1;
+    }
+    else if(up_visit != 20)
+    {
+        goto_floor = dn_visit;
+        elevs[elevatornum].direction = 2;
+    }
+    else{
+       if(abs(distance_up_visit) > abs(distance_dn_visit))
+       {
+             
+       }
+    }
+    
+    //Compare floor with maximum number of visits for up and down
+    //Choose whichever is closest
+    int distance_dn_visit = -100, distance_up_visit = -100;
+    for(int i = 0; i < elevs.size(); i++){
+        if(up_visit < 20) distance_up_visit = elevs[elevatornum].current_floor - up_visit;
+        if(dn_visit > -1) distance_dn_visit = elevs[elevatornum].current_floor - dn_visit;
+    }
+    int goto_floor;
+    
+
+    
     
     //if(up_visit != 9 && dn_visit != -1){
     //   
