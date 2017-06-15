@@ -35,13 +35,16 @@ int want_up[8];
 int want_dn[8];
 int want_off[2][8];
 
+
+
 void make_passengers(long whereami);
 
-vector<string> floors = {"L", "f2", "f3", "f4", "f5", "f6", "f7", "f8"};
+vector<string> floors = {"L", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"};
 long group_size();
 
 void passenger(long whoami);  // passenger trajectory
-vector<string> people = {"incoming", "outgoing", "interfloor"}
+vector<string> people = {"incoming", "outgoing", "interfloor"};
+
 void elevator();
 void loop_around_airport(long & seats_used);
 
@@ -78,8 +81,8 @@ void make_passengers(long whereami)
   {
     hold(expntl(10)); 
     long group = group_size();
-    for (long i=0;i<group;i++) 
-      passenger(whereami); 
+    //for (long i=0;i<group;i++) 
+    //  passenger(whereami); 
   }
 
 }
@@ -111,7 +114,7 @@ void passenger(long whoami)
   }
 
   (*hop_on) [whoami].queue();        // wait for shuttle and invitation to board
-  (*elevator_called) [whoami].clear();// cancel my call; next in line will push 
+  //(*elevator_called) [whoami].clear();// cancel my call; next in line will push 
   
   if(dest_floor > whoami){
     want_up[whoami];
@@ -138,18 +141,14 @@ void elevator() {
     int dn_visit = -1;
     int up_visit = 9;
 	  
-    //Check array of requests, check for highest person wanting to go down and lowest person wanting to go up
-    for(int = 0; i < 8; i++){
-	     if(want_up[i] > 0 && want_up[i] < up_visit) up_visit = i;
-	     if(want_dn[i] > 0 && want_dn[i] > dn_visit) dn_visit = i;
-    }
+    //for(int i = 0; i < 8; i++){
+	//     if(want_up[i] > 0 && want_up[i] < up_visit) up_visit = i;
+	//     if(want_dn[i] > 0 && want_dn[i] > dn_visit) dn_visit = i;
+    //}
     
-    //TODO: CHECK IF OTHER ELEVATOR IS ON, GOING IN THAT DIRECTION ALREADY. IF NOTPICK WHICHEVER IS CLOSEST
     if(up_visit != 9 && dn_visit != -1){
        
     }
-    
-    
     
     
     //long who_pushed = elevator_called->wait_any();
@@ -160,11 +159,11 @@ void elevator() {
 
     hold(5);  // 5 minutes to reach car lot stop
 
-    for(unsigned int i = 0; i < (*elevator_called).num_events(); i++){ //loop through every terminal + car lot
-      if((*elevator_called) [i].state()==OCC){
-        loop_around_airport(seats_used);
-      }
-	idle1.release();
+    //for(unsigned int i = 0; i < (*elevator_called).num_events(); i++){ //loop through every terminal + car lot
+    //  if((*elevator_called) [i].state()==OCC){
+    //    loop_around_airport(seats_used);
+    //  }
+	//idle1.release();
   }
   
 }
