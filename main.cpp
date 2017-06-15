@@ -127,7 +127,7 @@ void passenger(long whoami)
 
   //whoami --> the current floor of the passenger
   
-  const char* myName=people[whoami].c_str();
+  //const char* myName=people[whoami].c_str();
   //create(myName);
 
   // Give random destination floor
@@ -159,7 +159,7 @@ void passenger(long whoami)
  
   int elv_num = arr_elv[whoami];
 
-  while(elevs[elv_num].direction != pass_dir);
+  //while(elevs[elv_num].direction != pass_dir);
  
   if(dest_floor > whoami){
     want_up[whoami];
@@ -185,11 +185,9 @@ void elevator1() {
   while(1) {  // loop forever
 
 
-	//elevator_1.monitor();
-	//cout << "mailbox 1: " << elevator_1.msg_cnt() << endl;
-
     Wakeup.wait();
     
+	cout << elevs[0].current_floor << endl;
 	
     //int dn_visit = -1;
     //int up_visit = 9;
