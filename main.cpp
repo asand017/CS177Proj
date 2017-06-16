@@ -21,7 +21,8 @@ using namespace std;
 
 long int LOBBY = 0;
 
-facility_set buttons[2];
+//MBOX buttons;
+//buttons = mailbox ("buttons");
 //facility idle ("idle");
 
 //event_set going_up[2];
@@ -32,7 +33,7 @@ event_set get_off_now("get off now", 2);
 event_set boarded("boarded", 2); 
 
 //Wakes up elevators
-event Wakeup("Wakeup");
+event_set Wakeup("Wakeup", 2);
 
 event_set Going_up("up", 9);
 event_set Going_dn("down", 9);
@@ -70,6 +71,8 @@ long group_size();
 
 void passenger(long whoami);  // passenger trajectory
 vector<string> people = {"incoming", "outgoing", "interfloor"};
+
+void Control();
 
 void elevator(int elevatornum);
 //void elevator2();
@@ -173,7 +176,7 @@ void passenger(long whoami)
     want_dn[whoami] += 1;
   }
 
-  Wakeup.set(); // wake up an elevator
+  //send ( buttons, whoami ); // wake up an elevator
 
   //wait for announcemnt of which elevator is coming
   if(pass_dir ==1){
@@ -204,6 +207,74 @@ void passenger(long whoami)
   
 }
 
+void Control(){
+  	 //Find out first elevator to visit for maximum number of visits
+     create("control");
+  
+    while(1){
+      //long* whoami;
+      //receive( buttons, whoami ); 
+      int goto_floor; 
+      bool up_true = false, dn_true = false;
+      for(int i = 0; i < 9; i++){
+         if(want_up[i] > 0 && arr_elv == 0) up_true = true;
+         if(want_dn[i] > 0 && arr_elv == 0) dn_true = true;
+      }
+      
+      
+      int dn_visit = -1;
+      int up_visit = 20; 
+      
+      if(up_true){
+        for(int i = 0; i < 9; i++){
+          if(i < up_visit) up_visit = i;
+        }
+        int min_up_visit = 100, min_elevator_dn = -1;
+        for(int i = 0; i < elevs.size(); i++){
+          int distance_up_visit = 101;
+          if(elevs[i].direction == 0){
+            distance_up_visit = abs(elevs[i].current_floor - up_visit);
+            if(distance_up_visit < min_up_visit) {
+             min_up_visit = distance_up_visit;
+             min_elevator_up = i;
+            }
+          }
+        }
+      }
+      
+      else if(dn_true){
+        for(int i = 0; i < 9; i++){
+          if(i > dn_visit) dn_visit = i;
+        }
+        int min_dn_visit = 100, min_elevator_dn = -1;
+        for(int i = 0; i < elevs.size(); i++){
+          int distance_dn_visit = 101;
+          
+      }
+
+      //Compare floor with maximum number of visits for up and down
+      //Choose whichever is closest
+      int min_dn_visit = 100, min_up_visit = 100, min_elevator_up = -1, min_elevator_dn = -1;
+      for(int i = 0; i < elevs.size(); i++){
+          int distance_up_visit = 101, distance_dn_visit = 101;
+          if(elevs[i].direction == 0){
+            if(up) distance_up_visit = abs(elevs[i].current_floor - up_visit);
+            if(dn) distance_dn_visit = abs(elevs[i].current_floor - dn_visit);
+            if(distance_up_visit < min_up_visit) {
+             min_up_visit = distance_up_visit;
+             min_elevator_up = i;
+            }
+            if(distance_dn_visit < min_dn_visit) {
+              min_dn_visit = distance_dn_visit;
+              min_elevator_dn = i;
+            }
+          }
+       }
+       
+       
+    }
+}
+
 // Elevator Process
 
 void elevator(int elevatornum) {
@@ -214,41 +285,7 @@ void elevator(int elevatornum) {
   while(1) {  // loop forever
 
 
-    Wakeup.wait();
-    
-    
-    //Find out first elevator to visit for maximum number of visits
-		int goto_floor;
-    int dn_visit = -1;
-    int up_visit = 20;  
-    for(int i = 0; i < 9; i++){
-	     if(want_up[i] > 0 && i < up_visit && Going_up[i].state() == NOT_OCC) up_visit = i;
-	     if(want_dn[i] > 0 && i > dn_visit && Going_dn[i].state() == NOT_OCC) dn_visit = i;
-    }
-    
-    bool dn = false, up = false, both = false;
-    if(up_visit < 20) up = true;
-    if(dn_visit > -1) dn = true;
-    if(up && dn) both = true;
-    
-    //Compare floor with maximum number of visits for up and down
-    //Choose whichever is closest
-    int min_dn_visit = 100, min_up_visit = 100, min_elevator_up = -1, min_elevator_dn = -1;
-    for(int i = 0; i < elevs.size(); i++){
-        int distance_up_visit = 101, distance_dn_visit = 101;
-        if(elevs[elevatornum].direction == 0){
-          if(up) distance_up_visit = abs(elevs[elevatornum].current_floor - up_visit);
-          if(dn) distance_dn_visit = abs(elevs[elevatornum].current_floor - dn_visit);
-          if(distance_up_visit < min_up_visit) {
-           min_up_visit = distance_up_visit;
-           min_elevator_up = i;
-          }
-          if(distance_dn_visit < min_dn_visit) {
-           min_dn_visit = distance_dn_visit;
-            min_elevator_dn = i;
-          }
-        }
-    }
+    Wakeup[elevatornum].wait();
     
     //if both, make sure the same elevator isn't doing both up and down
     if(both)
