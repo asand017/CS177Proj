@@ -213,7 +213,7 @@ void Control()
 {
   	 //Find out first elevator to visit for maximum number of visits
     create("control");
- /* 
+  
     while(1){
       //long* whoami;
       //receive( buttons, whoami ); 
@@ -274,6 +274,7 @@ void Control()
             elev_asleep = i;
           }
         }
+		
         if(count_asleep == 1){
           hold( 5 * sqrt ( abs ( elevs[elev_asleep].current_floor - 5 ) ) );
           elevs[elev_asleep].current_floor = 5;
@@ -282,7 +283,9 @@ void Control()
           elevs[0].update(8, 8, 0);
           elevs[1].update(0, 0, 0);
         }
-    }*/
+		
+	  }
+    }
 }
 
 
