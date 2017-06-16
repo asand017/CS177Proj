@@ -101,7 +101,7 @@ extern "C" void sim(int argc, char *argv[])      // main process
       passenger(0);
       passenger(3);
 
-	  elevs[0].update(9, 9, 0); // elevator 1
+	  elevs[0].update(8, 8, 0); // elevator 1
 	  elevs[1].update(0, 0, 0); // elevator 2
 
       elevator(1);             
@@ -240,6 +240,9 @@ void Control(){
             }
           }
         }
+        elevs[min_elevator_up].direction = 1;
+        elevs[min_elevator_up].next_stop = up_visit;
+        Wakeup[min_elevator_up].set();
       }
       
       else if(dn_true){
@@ -249,29 +252,36 @@ void Control(){
         int min_dn_visit = 100, min_elevator_dn = -1;
         for(int i = 0; i < elevs.size(); i++){
           int distance_dn_visit = 101;
-          
-      }
-
-      //Compare floor with maximum number of visits for up and down
-      //Choose whichever is closest
-      int min_dn_visit = 100, min_up_visit = 100, min_elevator_up = -1, min_elevator_dn = -1;
-      for(int i = 0; i < elevs.size(); i++){
-          int distance_up_visit = 101, distance_dn_visit = 101;
           if(elevs[i].direction == 0){
-            if(up) distance_up_visit = abs(elevs[i].current_floor - up_visit);
-            if(dn) distance_dn_visit = abs(elevs[i].current_floor - dn_visit);
-            if(distance_up_visit < min_up_visit) {
-             min_up_visit = distance_up_visit;
-             min_elevator_up = i;
-            }
+            distance_dn_visit = abs(elevs[i].current_floor - dn_visit);
             if(distance_dn_visit < min_dn_visit) {
-              min_dn_visit = distance_dn_visit;
-              min_elevator_dn = i;
+                min_dn_visit = distance_dn_visit;
+                min_elevator_dn = i;
             }
           }
-       }
-       
-       
+        }
+        elevs[min_elevator_dn].direction = 2;
+        elevs[min_elevator_dn].next_stop = dn_visit;
+        Wakeup[min_elevator_dn].set();
+      }
+
+      else{
+        int count_asleep = 0;
+        int elev_asleep = -1;
+        for(int i = 0; i < 2; i++){
+          if(elevs[i].direction == 0){
+            count_asleep++;
+            elev_asleep = i;
+          }
+        }
+        if(count_asleep == 1){
+          hold( 5 * sqrt ( abs ( elev[elev_asleep].current_floor - 5 ) ) );
+          elev[elev_asleep].current_floor = 5;
+        }
+        else(count_asleep == 2){
+          elev[0].update(8, 8, 0);
+          elev[1].update(0, 0, 0);
+        }
     }
 }
 
