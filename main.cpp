@@ -104,7 +104,8 @@ extern "C" void sim(int argc, char *argv[])      // main process
 	  elevs[0].update(8, 8, 0); // elevator 1
 	  elevs[1].update(0, 0, 0); // elevator 2
 
-      elevator(1);             
+      elevator(1);
+             
       elevator(2);
 	  hold (1440);             // wait for a whole day (in minutes) to pass
       report();
@@ -202,23 +203,25 @@ void passenger(long whoami)
   hold(uniform(0.5,1.0));        // takes time to get seated
   //boarded.set();                 // tell driver you are in your seat
   //(*buttons) [whoami].release();     // let next person (if any) access button
-  //get_off_now->wait_any();            // everybody off when shuttle reaches next stop*/
+  //get_off_now->wait_any();            // everybody off when shuttle reaches next stop
   
   
 }
 
-void Control(){
+
+void Control()
+{
   	 //Find out first elevator to visit for maximum number of visits
-     create("control");
-  
+    create("control");
+ /* 
     while(1){
       //long* whoami;
       //receive( buttons, whoami ); 
       int goto_floor; 
       bool up_true = false, dn_true = false;
       for(int i = 0; i < 9; i++){
-         if(want_up[i] > 0 && arr_elv == 0) up_true = true;
-         if(want_dn[i] > 0 && arr_elv == 0) dn_true = true;
+         if(want_up[i] > 0 && arr_elv[i] == 0) up_true = true;
+         if(want_dn[i] > 0 && arr_elv[i] == 0) dn_true = true;
       }
       
       
@@ -229,7 +232,7 @@ void Control(){
         for(int i = 0; i < 9; i++){
           if(i < up_visit) up_visit = i;
         }
-        int min_up_visit = 100, min_elevator_dn = -1;
+        int min_up_visit = 100, min_elevator_up = -1;
         for(int i = 0; i < elevs.size(); i++){
           int distance_up_visit = 101;
           if(elevs[i].direction == 0){
@@ -243,9 +246,8 @@ void Control(){
         elevs[min_elevator_up].direction = 1;
         elevs[min_elevator_up].next_stop = up_visit;
         Wakeup[min_elevator_up].set();
-      }
-      
-      else if(dn_true){
+
+      }else if(dn_true){
         for(int i = 0; i < 9; i++){
           if(i > dn_visit) dn_visit = i;
         }
@@ -263,9 +265,7 @@ void Control(){
         elevs[min_elevator_dn].direction = 2;
         elevs[min_elevator_dn].next_stop = dn_visit;
         Wakeup[min_elevator_dn].set();
-      }
-
-      else{
+      }else{
         int count_asleep = 0;
         int elev_asleep = -1;
         for(int i = 0; i < 2; i++){
@@ -275,19 +275,20 @@ void Control(){
           }
         }
         if(count_asleep == 1){
-          hold( 5 * sqrt ( abs ( elev[elev_asleep].current_floor - 5 ) ) );
-          elev[elev_asleep].current_floor = 5;
+          hold( 5 * sqrt ( abs ( elevs[elev_asleep].current_floor - 5 ) ) );
+          elevs[elev_asleep].current_floor = 5;
         }
-        else(count_asleep == 2){
-          elev[0].update(8, 8, 0);
-          elev[1].update(0, 0, 0);
+        else if(count_asleep == 2){
+          elevs[0].update(8, 8, 0);
+          elevs[1].update(0, 0, 0);
         }
-    }
+    }*/
 }
+
 
 // Elevator Process
 
-void elevator(int elevatornum) {
+void elevator(int elevatornum){
   char num = elevatornum + 48;
   string elev_name = "elevator" + num;
   create (elev_name.c_str());
@@ -295,16 +296,16 @@ void elevator(int elevatornum) {
   while(1) {  // loop forever
 
 
-    Wakeup[elevatornum].wait();
+    Wakeup[elevatornum-1].wait();
     
     //if both, make sure the same elevator isn't doing both up and down
-    if(both)
+    /*if(both)
     {
       if(min_elevator_up != elevs[elevatornum].current_floor) min_elevator_dn = elevatornum;
-    }
+    }*/
     
     long seats_used = 0;
-    
+    /*
     if(min_elevator_up == elevatornum){  
       goto_floor = up_visit;
       elevs[elevatornum].next_stop = goto_floor;
@@ -330,9 +331,9 @@ void elevator(int elevatornum) {
       loop_around_floors(elevatornum, seats_used);
     }
 
-    else{
+    //else{
        
-    }
+    //}
     
     
     //long who_pushed = elevator_called->wait_any();
@@ -347,7 +348,7 @@ void elevator(int elevatornum) {
     //  if((*elevator_called) [i].state()==OCC){
     //    loop_around_airport(seats_used);
     //  }
-	//idle1.release();
+	//idle1.release();*/
   }
   
 }
@@ -372,7 +373,7 @@ void loop_around_floors (int elevatornum, long & seats_used) {
 
 
   // drop off all departing passengers at airport terminal
-      if(seats_used > 0 && (*buttons) [i].name() == ("Curb[" + to_string(i) + "]")) {
+      /*if(seats_used > 0 && (*buttons) [i].name() == ("Curb[" + to_string(i) + "]")) {
           (*get_off_now) [i].set(); // open door and let them off
           seats_used = 0; //seats_used - (*get_off_now) [i].wait_cnt();
           elevator_occ.note_value(seats_used);
@@ -385,7 +386,7 @@ void loop_around_floors (int elevatornum, long & seats_used) {
          load_elevator(i, seats_used);
          elevator_occ.note_value(seats_used);
       }
-  }
+  
   
   hold (uniform(3,5));  // drive to Hertz car lot
   hold (uniform(3,5));  
@@ -394,9 +395,10 @@ void loop_around_floors (int elevatornum, long & seats_used) {
     (*get_off_now) [1].set(); // open door and let them off
     seats_used = 0;
     elevator_occ.note_value(seats_used);
-  }
-  // Back to starting point. Bus is empty. Maybe I can rest...
+  }*/
 }
+  // Back to starting point. Bus is empty. Maybe I can rest...
+
 
 void load_elevator(long whereami, long & on_board)  // manage passenger loading
 {
