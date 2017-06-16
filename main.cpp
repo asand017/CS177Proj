@@ -28,40 +28,43 @@ long int LOBBY = 0;
 //event_set going_up[2];
 //event_set going_dn[2];
 event_set get_off_now("get off now", 2); 
-//event_set hop_on("hop on", 2);
+event_set hop_on("hop on", 2);
 
 event_set boarded("boarded", 2); 
 
 //Wakes up elevators
 event_set Wakeup("Wakeup", 2);
 
-event_set Going_up("up", 9);
-event_set Going_dn("down", 9);
+event_set Pick_up("up", 9);
+event_set Pick_dn("down", 9);
 
 int want_up[9];
 int want_dn[9];
 //int want_off[2][8];
 
-vector<int> arr_elv = {0,0,0,0,0,0,0,0,0}; // 0 - no elevator coming, 1 - elevator 1 coming, 2 - elevator 2 coming
+vector<int> arr_elv_up = {0,0,0,0,0,0,0,0,0}; // 0 - no elevator coming, 1 - elevator 1 coming, 2 - elevator 2 coming
+vector<int> arr_elv_dn = {0,0,0,0,0,0,0,0,0}; 
 // 3 - both elevators coming 
 
 struct Elevator{
-	int current_floor; // current floor of the elevator
-	vector<int> want_off[9]; // floors where passengers want to go
-	int direction; // 0 - idle, 1 - up, 2 - down
-	int next_stop; // next floor to go to
+        int current_floor; // current floor of the elevator
+        int occu;
+        vector<int> want_off[9]; // floors where passengers want to go
+        int direction; // 0 - idle, 1 - up, 2 - down
+        int next_stop; // next floor to go to
 
-	void update(int curr, int next, int Direction){
-		current_floor = curr;
-		next_stop = next;
-		direction = Direction;
-	}
+        void update(int curr, int next, int occup, int Direction){
+                current_floor = curr;
+                next_stop = next;
+                occu = occup;
+                direction = Direction;
+        }
 
-	void print(){
-	    cout << "current floor: " << current_floor << endl;
-		cout << "direction: " << direction << endl;
-		cout << "next elevator stop: " << next_stop << endl;
-	}
+        void print(){
+                cout << "current floor: " << current_floor << endl;
+                cout << "direction: " << direction << endl;
+                cout << "next elevator stop: " << next_stop << endl;
+        }
 };	
 
 void make_passengers(long whereami);
@@ -89,47 +92,47 @@ qtable elevator_occ("elevator occupancy");  // time average of how full is the e
 
 extern "C" void sim(int argc, char *argv[])      // main process
 {
-	  
-      create("sim");
 
-      elevator_occ.add_histogram(NUM_SEATS+1,0,NUM_SEATS);
-      
-      //for(int i = 0; i < floors.size(); i++){
-      //  make_passengers(i);
-      //}
+        create("sim");
 
-      passenger(0);
-      passenger(3);
+        elevator_occ.add_histogram(NUM_SEATS+1,0,NUM_SEATS);
 
-	  elevs[0].update(8, 8, 0); // elevator 1
-	  elevs[1].update(0, 0, 0); // elevator 2
+        //for(int i = 0; i < floors.size(); i++){
+        //  make_passengers(i);
+        //}
 
-      elevator(1);
-             
-      elevator(2);
-	  hold (1440);             // wait for a whole day (in minutes) to pass
-      report();
-      //status_facilities();
-  
+        passenger(0);
+        passenger(3);
+
+        elevs[0].update(8, 8, 0, 0); // elevator 1
+        elevs[1].update(0, 0, 0, 0); // elevator 2
+
+        elevator(0);
+
+        elevator(1);
+        hold (1440);             // wait for a whole day (in minutes) to pass
+        report();
+        //status_facilities();
+
 }
 
 // Model segment 1: generate groups of new passengers at specified location
 
 void make_passengers(long whereami)
 {
-  
-  const char* myName=floors[whereami].c_str();
-  create(myName);
 
-  
+        const char* myName=floors[whereami].c_str();
+        create(myName);
 
-  while(clock < 1440)       
-  {
-    hold(expntl(10)); 
-    long group = 10;//group_size();
-    for (long i=0;i<group;i++) 
-      passenger(whereami); 
-  }
+
+
+        while(clock < 1440)       
+        {
+                hold(expntl(10)); 
+                long group = 10;//group_size();
+                for (long i=0;i<group;i++) 
+                        passenger(whereami); 
+        }
 
 }
 
@@ -137,58 +140,61 @@ void make_passengers(long whereami)
 
 void passenger(long whoami)
 {
-  //whoami --> the current floor of the passenger
-  
-  
- 
-  // Give random destination floor
+        //whoami --> the current floor of the passenger
 
-  int dest_floor = 0;
-  
-  //cout << want_up[0] << " " << want_dn[0] << endl;
 
-  while(dest_floor == whoami){
-     dest_floor = rand() % 9; // a random destination floor
-  }
-  
-  string pass_type;
-  if(whoami == 0) pass_type = people[0];
-  else if(dest_floor == 0) pass_type = people[1];
-  else pass_type = people[2];
 
-  char floor_name = whoami + 48;
-  string pass_name = pass_type + floor_name;
+        // Give random destination floor
 
-  const char* myName=pass_name.c_str();
-  create(myName);
-  
+        int dest_floor = 0;
 
-  //(*buttons) [whoami].reserve();     // join the queue at my starting location
-  
-  int pass_dir;
+        //cout << want_up[0] << " " << want_dn[0] << endl;
 
-  //change array
-  if(dest_floor > whoami){
-    pass_dir = 1;
-	want_up[whoami] += 1;
-  }
-  else if(dest_floor < whoami){
-	pass_dir = 2;
-    want_dn[whoami] += 1;
-  }
+        while(dest_floor == whoami){
+                dest_floor = rand() % 9; // a random destination floor
+        }
 
-  //send ( buttons, whoami ); // wake up an elevator
+        string pass_type;
+        if(whoami == 0) pass_type = people[0];
+        else if(dest_floor == 0) pass_type = people[1];
+        else pass_type = people[2];
 
-  //wait for announcemnt of which elevator is coming
-  if(pass_dir ==1){
-    Going_up[whoami].wait();
-  }
-  else if(pass_dir == 2){
-    Going_dn[whoami].wait();
-  }
+        char floor_name = whoami + 48;
+        string pass_name = pass_type + floor_name;
 
-  //elv_num is elevator that came to floor
-  int elv_num = arr_elv[whoami];
+        const char* myName=pass_name.c_str();
+        create(myName);
+
+
+        //(*buttons) [whoami].reserve();     // join the queue at my starting location
+
+        int pass_dir;
+
+        //change array
+        if(dest_floor > whoami){
+                pass_dir = 1;
+                want_up[whoami] += 1;
+        }
+        else if(dest_floor < whoami){
+                pass_dir = 2;
+                want_dn[whoami] += 1;
+        }
+
+        //send ( buttons, whoami ); // wake up an elevator
+        
+        int elv_num = -1;
+        //wait for announcemnt of which elevator is coming
+        if(pass_dir ==1){
+                Pick_up[whoami].wait();
+                elv_num = arr_elv_up[whoami];
+        }
+        else if(pass_dir == 2){
+                Pick_dn[whoami].wait();
+                elv_num = arr_elv_dn[whoami];
+        }
+
+        //elv_num is elevator that came to floor
+       // int elv_num = arr_elv[whoami];
 
   //while(elevs[elv_num].direction != pass_dir);
  
@@ -198,9 +204,15 @@ void passenger(long whoami)
   else if(dest_floor < whoami){
     want_dn[whoami] -= 1;
   }
-  
 
-  hold(uniform(0.5,1.0));        // takes time to get seated
+  elevs[elv_num].want_off.at(dest_floor)++;
+  hop_on[elv_num].wait();
+  hold(uniform(5, 15));
+  boarded[elv_num].set();
+  get_off_now[elv_num].wait();
+  elevs[elv_num].want_off.at(dest_floor)--;
+
+  //hold(uniform(0.5,1.0));        // takes time to get seated
   //boarded.set();                 // tell driver you are in your seat
   //(*buttons) [whoami].release();     // let next person (if any) access button
   //get_off_now->wait_any();            // everybody off when shuttle reaches next stop
@@ -216,12 +228,47 @@ void Control()
   
     while(1){
       //long* whoami;
-      //receive( buttons, whoami ); 
+      //receive( buttons, whoami );
+      
+
+
+      int count_asleep = 0;
+      int elev_asleep = -1;
+      for(int i = 0; i < 2; i++){
+        if(elevs[i].direction == 0){
+          count_asleep++;
+          elev_asleep = i;
+        }
+      }
+		
+      if(count_asleep == 1){
+        hold( 5 * sqrt ( abs ( elevs[elev_asleep].current_floor - 5 ) ) );
+        elevs[elev_asleep].update(5, 5, 0, 0);
+      }
+      else if(count_asleep == 2){
+        int closest_9, closest_0;
+        if(elevs[0].current_floor > elevs[1].current_floor) {
+            closest_9 = 0;
+            closest_0 = 1;
+        }
+        else {
+            closest_9 = 1;
+            closest_0 = 0;
+        }
+
+        hold( 5 * sqrt ( abs ( elevs[closest_9].current_floor - 9 ) ) );
+        elevs[closest_9].update(8, 8, 0, 0);
+        hold( 5 * sqrt ( abs ( elevs[closest_0].current_floor - 0 ) ) );
+        elevs[closest_0].update(0, 0, 0, 0);
+      }
+
+
+
       int goto_floor; 
       bool up_true = false, dn_true = false;
       for(int i = 0; i < 9; i++){
-         if(want_up[i] > 0 && arr_elv[i] == 0) up_true = true;
-         if(want_dn[i] > 0 && arr_elv[i] == 0) dn_true = true;
+         if(want_up[i] > 0 && arr_elv_up[i] == 0) up_true = true;
+         if(want_dn[i] > 0 && arr_elv_dn[i] == 0) dn_true = true;
       }
       
       
@@ -247,7 +294,8 @@ void Control()
         elevs[min_elevator_up].next_stop = up_visit;
         Wakeup[min_elevator_up].set();
 
-      }else if(dn_true){
+      }
+      else if(dn_true){
         for(int i = 0; i < 9; i++){
           if(i > dn_visit) dn_visit = i;
         }
@@ -265,27 +313,10 @@ void Control()
         elevs[min_elevator_dn].direction = 2;
         elevs[min_elevator_dn].next_stop = dn_visit;
         Wakeup[min_elevator_dn].set();
-      }else{
-        int count_asleep = 0;
-        int elev_asleep = -1;
-        for(int i = 0; i < 2; i++){
-          if(elevs[i].direction == 0){
-            count_asleep++;
-            elev_asleep = i;
-          }
-        }
-		
-        if(count_asleep == 1){
-          hold( 5 * sqrt ( abs ( elevs[elev_asleep].current_floor - 5 ) ) );
-          elevs[elev_asleep].current_floor = 5;
-        }
-        else if(count_asleep == 2){
-          elevs[0].update(8, 8, 0);
-          elevs[1].update(0, 0, 0);
-        }
-		
-	  }
-    }
+      }
+      
+   }
+
 }
 
 
@@ -296,64 +327,20 @@ void elevator(int elevatornum){
   string elev_name = "elevator" + num;
   create (elev_name.c_str());
 
-  cout << "elevator_" << (int)elevatornum << " is at floor " << elevs[elevatornum-1].current_floor << endl;
+  cout << "elevator_" << (int)elevatornum << " is at floor " << elevs[elevatornum].current_floor << endl;
 
   while(1) {  // loop forever
 
 
-    Wakeup[elevatornum-1].wait();
-    
-    //if both, make sure the same elevator isn't doing both up and down
-    /*if(both)
-    {
-      if(min_elevator_up != elevs[elevatornum].current_floor) min_elevator_dn = elevatornum;
-    }*/
-    
+    Wakeup[elevatornum].wait();
+
     long seats_used = 0;
-    /*
-    if(min_elevator_up == elevatornum){  
-      goto_floor = up_visit;
-      elevs[elevatornum].next_stop = goto_floor;
-      for(int i = goto_floor; i < 9; i++){
-          if(want_up[i] > 0)
-          {
-             if(arr_elv[i] > 0) arr_elv[i] = 3;
-             else arr_elv[i] = elevatornum;
-          }
-      }
-      loop_around_floors(elevatornum, seats_used);
-    }
-    else if(min_elevator_dn == elevatornum){
-      goto_floor = dn_visit;
-      elevs[elevatornum].next_stop = goto_floor;
-      for(int i =goto_floor; i >= 0; i--){
-          if(want_dn[i] > 0)
-          {
-            if(arr_elv[i] > 0) arr_elv[i] = 3;
-            else arr_elv[i] = elevatornum;
-          }
-      }
-      loop_around_floors(elevatornum, seats_used);
-    }
 
-    //else{
-       
-    //}
-    
-    
-    //long who_pushed = elevator_called->wait_any();
-    //(*elevator_called) [who_pushed].set(); // loop exit needs to see event
+    elevs[elevatornum].occu = seats_used;
 
-    //long seats_used = 0;              // shuttle is initially empty
-    //elevator_occ.note_value(seats_used);
+    loop_around_floors(elevatornum, seats_used); 
 
-    //hold(5);  // 5 minutes to reach car lot stop
 
-    //for(unsigned int i = 0; i < (*elevator_called).num_events(); i++){ //loop through every terminal + car lot
-    //  if((*elevator_called) [i].state()==OCC){
-    //    loop_around_airport(seats_used);
-    //  }
-	//idle1.release();*/
   }
   
 }
@@ -375,7 +362,12 @@ void loop_around_floors (int elevatornum, long & seats_used) {
   //elevator_occ.note_value(seats_used);
   
   
-
+  hold( 5 * sqrt( abs(elevs[elevatornum].current_floor - elevs[elevatornum].next_stop) ) );
+  elevs[elevatornum].current_floor = elevs[elevatornum].next_stop;
+  
+  if(elevs[elevatornum].direction == 1){
+    
+  }
 
   // drop off all departing passengers at airport terminal
       /*if(seats_used > 0 && (*buttons) [i].name() == ("Curb[" + to_string(i) + "]")) {
