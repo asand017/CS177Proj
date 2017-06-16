@@ -94,9 +94,9 @@ extern "C" void sim(int argc, char *argv[])      // main process
 
       elevator_occ.add_histogram(NUM_SEATS+1,0,NUM_SEATS);
       
-      for(int i = 0; i < floors.size(); i++){
-        make_passengers(i);
-      }
+      //for(int i = 0; i < floors.size(); i++){
+      //  make_passengers(i);
+      //}
 
       passenger(0);
       passenger(3);
@@ -295,6 +295,8 @@ void elevator(int elevatornum){
   char num = elevatornum + 48;
   string elev_name = "elevator" + num;
   create (elev_name.c_str());
+
+  cout << "elevator_" << (int)elevatornum << " is at floor " << elevs[elevatornum-1].current_floor << endl;
 
   while(1) {  // loop forever
 
