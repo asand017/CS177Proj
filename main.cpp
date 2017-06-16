@@ -21,12 +21,8 @@ using namespace std;
 
 long int LOBBY = 0;
 
-//MBOX buttons;
-//buttons = mailbox ("buttons");
-//facility idle ("idle");
+facility update_workload("update");
 
-//event_set going_up[2];
-//event_set going_dn[2];
 event_set get_off_now("get off now", 2); 
 event_set hop_on("hop on", 2);
 
@@ -97,19 +93,20 @@ extern "C" void sim(int argc, char *argv[])      // main process
 
         elevator_occ.add_histogram(NUM_SEATS+1,0,NUM_SEATS);
 
-        for(int i = 0; i < floors.size(); i++){
+        /*for(int i = 0; i < floors.size(); i++){
           make_passengers(i);
-        }
+        }*/
 
         passenger(0);
         passenger(3);
+		cout << endl;
         elevs[0].update(8, 8, 0, 0); // elevator 1
         elevs[1].update(0, 0, 0, 0); // elevator 2
 
         elevator(0);
         elevator(1);
-        hold (1440);             // wait for a whole day (in minutes) to pass
-        report();
+        hold(300);             // wait for a whole day (in minutes) to pass
+        //report();
         //status_facilities();
 
 }
@@ -127,7 +124,7 @@ void make_passengers(long whereami)
         while(clock < 1440)       
         {
                 hold(expntl(10)); 
-                long group = 10;//group_size();
+                long group = 3;//group_size();
                 for (long i=0;i<group;i++) 
                         passenger(whereami); 
         }
@@ -140,13 +137,12 @@ void passenger(long whoami)
 {
         //whoami --> the current floor of the passenger
 
-
+		cout << "This passenger is at floor " << whoami << endl;
 
         // Give random destination floor
 
+		//update_workload.reserve();
         int dest_floor = 0;
-
-        //cout << want_up[0] << " " << want_dn[0] << endl;
 
         while(dest_floor == whoami){
                 dest_floor = rand() % 9; // a random destination floor
@@ -163,8 +159,6 @@ void passenger(long whoami)
         const char* myName=pass_name.c_str();
         create(myName);
 
-
-        //(*buttons) [whoami].reserve();     // join the queue at my starting location
 
         int pass_dir;
 
@@ -192,32 +186,32 @@ void passenger(long whoami)
         }
 
         //elv_num is elevator that came to floor
-       // int elv_num = arr_elv[whoami];
+        // int elv_num = arr_elv[whoami];
 
-  //while(elevs[elv_num].direction != pass_dir);
-  //
-  cerr << elevs[elv_num].want_off.size();
+  		//while(elevs[elv_num].direction != pass_dir);
+  		//
+  		cerr << elevs[elv_num].want_off.size();
  
-  if(dest_floor > whoami){
-    want_up[whoami] -= 1;
-  }
-  else if(dest_floor < whoami){
-    want_dn[whoami] -= 1;
-  }
+  		if(dest_floor > whoami){
+    		want_up[whoami] -= 1;
+  		}
+  		else if(dest_floor < whoami){
+    		want_dn[whoami] -= 1;
+  		}
 
-  elevs[elv_num].want_off[dest_floor]++;
-  hop_on[elv_num].wait();
-  hold(uniform(5, 15));
-  boarded[elv_num].set();
-  get_off_now[elv_num].wait();
-  elevs[elv_num].want_off[dest_floor]--;
-
-  //hold(uniform(0.5,1.0));        // takes time to get seated
-  //boarded.set();                 // tell driver you are in your seat
-  //(*buttons) [whoami].release();     // let next person (if any) access button
-  //get_off_now->wait_any();            // everybody off when shuttle reaches next stop
+  		elevs[elv_num].want_off[dest_floor]++;
+  		hop_on[elv_num].wait();
+ 		hold(uniform(5, 15));
+  		boarded[elv_num].set();
+  		get_off_now[elv_num].wait();
+  		elevs[elv_num].want_off[dest_floor]--;
+		//update_workload.release();
+  		//hold(uniform(0.5,1.0));        // takes time to get seated
+  		//boarded.set();                 // tell driver you are in your seat
+  		//(*buttons) [whoami].release();     // let next person (if any) access button
+  		//get_off_now->wait_any();            // everybody off when shuttle reaches next stop
   
-  
+  		
 }
 
 
@@ -333,6 +327,8 @@ void elevator(int elevatornum){
   string elev_name = "elevator" + num;
   create (elev_name.c_str());
 
+  //hold(4);
+  cout << "At time " << clock << ", ";
   cout << "elevator_" << (int)elevatornum << " is at floor " << elevs[elevatornum].current_floor << endl;
 
   while(1) {  // loop forever
@@ -346,7 +342,7 @@ void elevator(int elevatornum){
 
     loop_around_floors(elevatornum, seats_used); 
 
-
+	
   }
   
 }
