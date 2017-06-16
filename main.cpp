@@ -367,60 +367,62 @@ void loop_around_floors (int elevatornum, long & seats_used) {
   elevator_occ.note_value(seats_used);
   
   
-  hold( 5 * sqrt( abs(elevs[elevatornum].current_floor - elevs[elevatornum].next_stop) ) );
-  elevs[elevatornum].current_floor = elevs[elevatornum].next_stop;
+  hold( 5 * sqrt( abs(elevs[elevatornum-1].current_floor - elevs[elevatornum-1].next_stop) ) );
+  elevs[elevatornum-1].current_floor = elevs[elevatornum-1].next_stop;
   
-  if(elevs[elevatornum].direction == 1){
+  //cout << elevs[elevatornum].current_floor << endl;
+  if(elevs[elevatornum-1].direction == 1){
     for(int i = elevs[elevatornum].current_floor; i < 9; i++)
     {
-    
+    	//cout << elevs << endl;
         hold(2);
-        seats_used = (seats_used + want_up[elevs[elevatornum].current_floor]) - elevs[elevatornum].want_off[elevs[elevatornum].current_floor];
+        seats_used = (seats_used + want_up[elevs[elevatornum-1].current_floor]) - elevs[elevatornum-1].want_off[elevs[elevatornum-1].current_floor];
         elevator_occ.note_value(seats_used);
         get_off_now[elevatornum].set();
-        Pick_up[elevs[elevatornum].current_floor].set();
+        Pick_up[elevs[elevatornum-1].current_floor].set();
         boarded[elevatornum].wait();
-        Pick_up[elevs[elevatornum].current_floor].clear();
+        Pick_up[elevs[elevatornum-1].current_floor].clear();
         hold(3);
         int go_here = 20;
         for(int i = 0; i < 9; i++){
-          if(elevs[elevatornum].want_off[i] > 0 && i < go_here) go_here = i;
+          if(elevs[elevatornum-1].want_off[i] > 0 && i < go_here) go_here = i;
           if(want_up[i] > 0 && i < go_here) go_here = i;
         }
         if(go_here == 20) break;
-        elevs[elevatornum].next_stop = go_here;
-        hold( 5 * sqrt( abs(elevs[elevatornum].current_floor - elevs[elevatornum].next_stop) ) );
-        elevs[elevatornum].current_floor = elevs[elevatornum].next_stop;
+        elevs[elevatornum-1].next_stop = go_here;
+        hold( 5 * sqrt( abs(elevs[elevatornum-1].current_floor - elevs[elevatornum-1].next_stop) ) );
+        elevs[elevatornum-1].current_floor = elevs[elevatornum-1].next_stop;
      }
 
 
-       cerr << "Elevator is at" << elevs[elevatornum].current_floor << endl;
+       //cerr << "Elevator is at" << elevs[elevatornum-1].current_floor << endl;
 
-    }
+   }
 
-    if(elevs[elevatornum].direction == 2){
+
+    if(elevs[elevatornum-1].direction == 2){
     
-        for(int i = elevs[elevatornum].current_floor; i >= 0; i--)
+        for(int i = elevs[elevatornum-1].current_floor; i >= 0; i--)
         {
             hold(2);
-            seats_used = (seats_used + want_up[elevs[elevatornum].current_floor]) - elevs[elevatornum].want_off[elevs[elevatornum].current_floor];
+            seats_used = (seats_used + want_up[elevs[elevatornum-1].current_floor]) - elevs[elevatornum-1].want_off[elevs[elevatornum-1].current_floor];
             elevator_occ.note_value(seats_used);
 
             get_off_now[elevatornum].set();
-            Pick_up[elevs[elevatornum].current_floor].set();
+            Pick_up[elevs[elevatornum-1].current_floor].set();
             boarded[elevatornum].wait();
-            Pick_up[elevs[elevatornum].current_floor].clear();
+            Pick_up[elevs[elevatornum-1].current_floor].clear();
             hold(3);
 
             int go_here = -1;
             for(int i = 0; i < 9; i++){
-                if(elevs[elevatornum].want_off[i] > 0 && i > go_here) go_here = i;
+                if(elevs[elevatornum-1].want_off[i] > 0 && i > go_here) go_here = i;
                 if(want_up[i] > 0 && i > go_here) go_here = i;
             }
             if(go_here == -1) break;
-            elevs[elevatornum].next_stop = go_here;
-            hold( 5 * sqrt( abs(elevs[elevatornum].current_floor - elevs[elevatornum].next_stop) ) );
-            elevs[elevatornum].current_floor = elevs[elevatornum].next_stop;
+            elevs[elevatornum-1].next_stop = go_here;
+            hold( 5 * sqrt( abs(elevs[elevatornum-1].current_floor - elevs[elevatornum-1].next_stop) ) );
+            elevs[elevatornum-1].current_floor = elevs[elevatornum-1].next_stop;
         }
 
     }
